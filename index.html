@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roadhouse Lagersoft</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        select, input[type="text"], input[type="number"], input[type="submit"] {
+            padding: 8px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #333;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Roadhouse Lagersoft</h1>
+</header>
+
+<main>
+    <div class="form-container">
+        <h2>Teile hinzufügen</h2>
+        <form id="partForm">
+            <label for="vehicleSelect">Fahrzeug:</label>
+            <select id="vehicleSelect">
+                <option value="Wolfswagen">Wolfswagen</option>
+                <option value="Laika">Laika</option>
+                <option value="Rager">Rager</option>
+                <option value="Cruiser">Cruiser</option>
+                <option value="Dirt Bike">Dirt Bike</option>
+            </select>
+
+            <label for="partName">Teilname:</label>
+            <input type="text" id="partName" required>
+
+            <label for="partQuantity">Menge:</label>
+            <input type="number" id="partQuantity" required>
+
+            <label for="purchasePrice">Ankaufspreis:</label>
+            <input type="number" id="purchasePrice">
+
+            <label for="salePrice">Verkaufspreis:</label>
+            <input type="number" id="salePrice">
+
+            <input type="submit" value="Hinzufügen">
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Aktuelle Teile im Lager</h2>
+        <table id="partsTable">
+            <thead>
+                <tr>
+                    <th>Fahrzeug</th>
+                    <th>Teil</th>
+                    <th>Menge</th>
+                    <th>Ankaufspreis</th>
+                    <th>Verkaufspreis</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamische Einträge werden hier angezeigt -->
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbwpYymQiz4b2n9kIxvM_0iqyjKK43F8_9w8RBnZ4JhCwWiwElGxjHXPHI3qwIeUmeGn/exec';
+
+    async function loadParts() {
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            const partsTable = document.getElementById('partsTable').getElementsByTagName('tbody')[0];
+            partsTable.innerHTML = ''; // Vorherige Einträge löschen
+
+            data.forEach(part => {
+                const row = partsTable.insertRow();
+                row.insertCell(0).textContent = part.vehicle;
+                row.insertCell(1).textContent = part.part;
+                row.insertCell(2).textContent = part.quantity;
+                row.insertCell(3).textContent = part.purchasePrice || '-';
+                row.insertCell(4).textContent = part.salePrice || '-';
+            });
+        } catch (error) {
+            console.error('Fehler beim Laden der Teile:', error);
+        }
+    }
+
+    document.getElementById('partForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const vehicle = document.getElementById('vehicleSelect').value;
+        const partName = document.getElementById('partName').value;
+        const partQuantity = document.getElementById('partQuantity').value;
+        const purchasePrice = document.getElementById('purchasePrice').value || null;
+        const salePrice = document.getElementById('salePrice').value || null;
+
+        const newPart = {
+            vehicle,
+            part: partName,
+            quantity: parseInt(partQuantity),
+            purchasePrice: parseFloat(purchasePrice),
+            salePrice: parseFloat(salePrice),
+        };
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newPart),
+            });
+
+            const result = await response.json();
+            console.log('API Response:', result); // Debugging
+            if (result.status === 'success') {
+                alert('Eintrag erfolgreich hinzugefügt!');
+                document.getElementById('partForm').reset();
+                loadParts(); // Tabelle neu laden
+            } else {
+                alert('Fehler beim Hinzufügen des Eintrags.');
+            }
+        } catch (error) {
+            console.error('Fehler:', error); // Debugging
+            alert('Fehler beim Speichern. Siehe Konsole für Details.');
+        }
+    });
+
+    loadParts(); // Lade Teile beim Laden der Seite
+</script>
+
+</body>
+</html>
